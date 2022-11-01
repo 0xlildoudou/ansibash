@@ -57,7 +57,7 @@ function main() {
             ssh_command "${CURRENT_HOST}"
         done
     elif [[ -z ${HOSTS} && -n ${INVENTORY} ]]; then
-        HOSTS_NUMBER="$(wc -l ${INVENTORY} | awk -F' ' '{print $1}')"
+        HOSTS_NUMBER="$(wc -l ${INVENTORY} | awk -F' ' '{print $1}' | sed '/^\s*\#/!p')"
         for i in $(seq 1 ${HOSTS_NUMBER}); do
             CURRENT_HOST="$(sed -n ${i}p ${INVENTORY})"
             DATE="$(date)"
