@@ -25,7 +25,7 @@ function usage() {
 
 function ssh_command() {
 
-    CURRENT_HOST="$*"
+    CURRENT_HOST="$1"
     echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
     ssh ${USER}@${CURRENT_HOST} "${COMMAND}"
     if [[ $? != "0" ]]; then
@@ -37,7 +37,6 @@ function ssh_command() {
 }
 
 function main() {
-    clear
 
     if [[ -z ${USER} ]]; then
 
@@ -60,23 +59,26 @@ function main() {
 
     elif [[ -n ${HOSTS} && -z ${INVENTORY} ]]; then
 
-        HOSTS_NUMBER="$(echo ${HOSTS} | sed -e 's/,/\n/g' | wc -l)"
-        for i in $(seq 1 ${HOSTS_NUMBER}); do
+        HOSTS_LIST=($(echo ${HOSTS} | sed -e 's/,/ /g'))
+        for i in ${!HOSTS_LIST[@]}; do
 
-            CURRENT_HOST="$(echo ${HOSTS} | sed -e 's/,/\n/g' | sed -n ${i}p)"
             DATE="$(date)"
-            ssh_command "${CURRENT_HOST}"
+            ssh_command "${HOSTS_LIST[$i]}"
 
         done
 
     elif [[ -z ${HOSTS} && -n ${INVENTORY} ]]; then
 
-        HOSTS_NUMBER="$(wc -l ${INVENTORY} | awk -F' ' '{print $1}' | sed '/^\s*\#/!p')"
-        for i in $(seq 1 ${HOSTS_NUMBER}); do
+        declare -a HOSTS_LIST
 
-            CURRENT_HOST="$(sed -n ${i}p ${INVENTORY})"
+        while read line; do
+            HOSTS_LIST+=($(echo $line))
+        done < ${INVENTORY}
+
+        for i in ${!HOSTS_LIST[@]}; do
+
             DATE="$(date)"
-            ssh_command "${CURRENT_HOST}"
+            ssh_command "${HOSTS_LIST[$i]}"
 
         done
 
