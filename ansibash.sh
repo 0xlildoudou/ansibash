@@ -11,6 +11,7 @@ NC='\033[0m'
 
 function usage() {
 
+
     echo -e "USAGE: ansibash.sh [OPTION] COMMAND"
     echo -e "Run a command or a script on multiple targets."
     echo -e "OPTION:"
