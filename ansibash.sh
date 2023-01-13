@@ -29,7 +29,13 @@ function usage() {
 function output() {
 
     CURRENT_HOST="$1"
+<<<<<<< HEAD
     if [[ ${OUTPUT} == "True" ]]; then
+=======
+    echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
+    ssh ${USER}@${CURRENT_HOST} "${COMMAND}"
+    if [[ $? != "0" ]]; then
+>>>>>>> aa4f53f (change sed command to array)
 
         echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> ${OUTPUT_FILE}
         ssh_command "${CURRENT_HOST}" >> ${OUTPUT_FILE}
@@ -91,7 +97,11 @@ function main() {
         for i in ${!HOSTS_LIST[@]}; do
 
             DATE="$(date)"
+<<<<<<< HEAD
             output "${HOSTS_LIST[$i]}"
+=======
+            ssh_command "${HOSTS_LIST[$i]}"
+>>>>>>> aa4f53f (change sed command to array)
 
         done
 
@@ -106,7 +116,11 @@ function main() {
         for i in ${!HOSTS_LIST[@]}; do
 
             DATE="$(date)"
+<<<<<<< HEAD
             output "${HOSTS_LIST[$i]}"
+=======
+            ssh_command "${HOSTS_LIST[$i]}"
+>>>>>>> aa4f53f (change sed command to array)
 
         done
 
