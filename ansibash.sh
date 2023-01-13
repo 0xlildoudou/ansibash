@@ -10,59 +10,94 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 function usage() {
+
     echo -e "USAGE: ansibash.sh [OPTION] COMMAND"
     echo -e "Run a command or a script on multiple targets."
     echo -e "OPTION:"
     echo -e "-h, --hosts    List of hosts (separated by commas) where the command should be broadcast. "
     echo -e "-i, --inventory    Inventory file with one host per line"
     echo -e "-u, --user     User used for connexion (ssh)"
+    echo -e "-o, --output   Print all result to a output file"
     echo -e "-c, --command  Command to broadcast on hosts (always put at the end of the command)"
     echo -e "--help         Print this help"
 
-    exit 1
+    exit 0
+}
+
+function output() {
+
+    CURRENT_HOST="$1"
+    if [[ ${OUTPUT} == "True" ]]; then
+
+        echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> ${OUTPUT_FILE}
+        ssh_command "${CURRENT_HOST}" >> ${OUTPUT_FILE}
+        echo -e "---" >> ${OUTPUT_FILE}
+
+    else
+
+        echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
+        ssh_command "${CURRENT_HOST}"
+
+    fi
 }
 
 function ssh_command() {
-    CURRENT_HOST="$*"
-    echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
-    ssh ${USER}@${CURRENT_HOST} "${COMMAND}"
+
+    ssh ${USER}@${1} "${COMMAND}"
     if [[ $? != "0" ]]; then
+
         echo -e "${RED}[Error]${NC} ssh command error"
         exit 1
+
     fi
 }
 
 function main() {
-    clear
-
 
     if [[ -z ${USER} ]]; then
+
         echo -e "${RED}[Error]${NC} User missing"
         usage
+
     fi
 
     if [[ -z ${COMMAND} ]]; then
+
         echo -e "${RED}[Error]${NC} Command missing"
         usage
+
     fi
 
     if [[ -z ${HOSTS} && -z ${INVENTORY} ]]; then
+
         echo -e "${RED}[Error]${NC} Hosts/Inventory file missing"
         usage
+
     elif [[ -n ${HOSTS} && -z ${INVENTORY} ]]; then
-        HOSTS_NUMBER="$(echo ${HOSTS} | sed -e 's/,/\n/g' | wc -l)"
-        for i in $(seq 1 ${HOSTS_NUMBER}); do
-            CURRENT_HOST="$(echo ${HOSTS} | sed -e 's/,/\n/g' | sed -n ${i}p)"
+
+        HOSTS_LIST=($(echo ${HOSTS} | sed -e 's/,/ /g'))
+        for i in ${!HOSTS_LIST[@]}; do
+
             DATE="$(date)"
-            ssh_command "${CURRENT_HOST}"
+            output "${HOSTS_LIST[$i]}"
+
         done
+
     elif [[ -z ${HOSTS} && -n ${INVENTORY} ]]; then
-        HOSTS_NUMBER="$(wc -l ${INVENTORY} | awk -F' ' '{print $1}' | sed '/^\s*\#/!p')"
-        for i in $(seq 1 ${HOSTS_NUMBER}); do
-            CURRENT_HOST="$(sed -n ${i}p ${INVENTORY})"
+
+        declare -a HOSTS_LIST
+
+        while read line; do
+            HOSTS_LIST+=($(echo $line))
+        done < ${INVENTORY}
+
+        for i in ${!HOSTS_LIST[@]}; do
+
             DATE="$(date)"
-            ssh_command "${CURRENT_HOST}"
+            output "${HOSTS_LIST[$i]}"
+
         done
+
     fi
 }
 
@@ -80,6 +115,10 @@ while [ $# -gt 0 ]; do
             ;;
         -i|--inventory)
             INVENTORY="$2"
+            ;;
+        -o|--output)
+            OUTPUT="True"
+            OUTPUT_FILE="$2"
             ;;
         --help)
             usage
