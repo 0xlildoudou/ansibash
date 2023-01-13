@@ -17,17 +17,33 @@ function usage() {
     echo -e "-h, --hosts    List of hosts (separated by commas) where the command should be broadcast. "
     echo -e "-i, --inventory    Inventory file with one host per line"
     echo -e "-u, --user     User used for connexion (ssh)"
+    echo -e "-o, --output   Print all result to a output file"
     echo -e "-c, --command  Command to broadcast on hosts (always put at the end of the command)"
     echo -e "--help         Print this help"
 
     exit 0
 }
 
-function ssh_command() {
+function output() {
 
     CURRENT_HOST="$1"
-    echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
-    ssh ${USER}@${CURRENT_HOST} "${COMMAND}"
+    if [[ ${OUTPUT} == "True" ]]; then
+
+        echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> ${OUTPUT_FILE}
+        ssh_command "${CURRENT_HOST}" >> ${OUTPUT_FILE}
+        echo -e "---" >> ${OUTPUT_FILE}
+
+    else
+
+        echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
+        ssh_command "${CURRENT_HOST}"
+
+    fi
+}
+
+function ssh_command() {
+
+    ssh ${USER}@${1} "${COMMAND}"
     if [[ $? != "0" ]]; then
 
         echo -e "${RED}[Error]${NC} ssh command error"
@@ -63,7 +79,7 @@ function main() {
         for i in ${!HOSTS_LIST[@]}; do
 
             DATE="$(date)"
-            ssh_command "${HOSTS_LIST[$i]}"
+            output "${HOSTS_LIST[$i]}"
 
         done
 
@@ -78,7 +94,7 @@ function main() {
         for i in ${!HOSTS_LIST[@]}; do
 
             DATE="$(date)"
-            ssh_command "${HOSTS_LIST[$i]}"
+            output "${HOSTS_LIST[$i]}"
 
         done
 
@@ -99,6 +115,10 @@ while [ $# -gt 0 ]; do
             ;;
         -i|--inventory)
             INVENTORY="$2"
+            ;;
+        -o|--output)
+            OUTPUT="True"
+            OUTPUT_FILE="$2"
             ;;
         --help)
             usage
