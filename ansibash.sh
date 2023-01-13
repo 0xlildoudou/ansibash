@@ -30,10 +30,30 @@ function output() {
 
     CURRENT_HOST="$1"
 <<<<<<< HEAD
+<<<<<<< HEAD
     if [[ ${OUTPUT} == "True" ]]; then
 =======
     echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
     ssh ${USER}@${CURRENT_HOST} "${COMMAND}"
+=======
+    if [[ ${OUTPUT} == "True" ]]; then
+
+        echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> ${OUTPUT_FILE}
+        ssh_command "${CURRENT_HOST}" >> ${OUTPUT_FILE}
+        echo -e "---" >> ${OUTPUT_FILE}
+
+    else
+
+        echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
+        ssh_command "${CURRENT_HOST}"
+
+    fi
+}
+
+function ssh_command() {
+
+    ssh ${USER}@${1} "${COMMAND}"
+>>>>>>> 3d141f7 (add output file)
     if [[ $? != "0" ]]; then
 >>>>>>> aa4f53f (change sed command to array)
 
@@ -98,10 +118,14 @@ function main() {
 
             DATE="$(date)"
 <<<<<<< HEAD
+<<<<<<< HEAD
             output "${HOSTS_LIST[$i]}"
 =======
             ssh_command "${HOSTS_LIST[$i]}"
 >>>>>>> aa4f53f (change sed command to array)
+=======
+            output "${HOSTS_LIST[$i]}"
+>>>>>>> 3d141f7 (add output file)
 
         done
 
@@ -117,10 +141,14 @@ function main() {
 
             DATE="$(date)"
 <<<<<<< HEAD
+<<<<<<< HEAD
             output "${HOSTS_LIST[$i]}"
 =======
             ssh_command "${HOSTS_LIST[$i]}"
 >>>>>>> aa4f53f (change sed command to array)
+=======
+            output "${HOSTS_LIST[$i]}"
+>>>>>>> 3d141f7 (add output file)
 
         done
 
@@ -146,10 +174,13 @@ while [ $# -gt 0 ]; do
             OUTPUT="True"
             OUTPUT_FILE="$2"
             ;;
+<<<<<<< HEAD
         -s|--script)
             SCRIPT="$2"
             break
             ;;
+=======
+>>>>>>> 3d141f7 (add output file)
         --help)
             usage
             ;;
