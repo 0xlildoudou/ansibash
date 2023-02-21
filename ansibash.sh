@@ -19,6 +19,7 @@ function usage() {
     echo -e "-u, --user     User used for connexion (ssh)"
     echo -e "-o, --output   Print all result to a output file"
     echo -e "-c, --command  Command to broadcast on hosts (always put at the end of the command)"
+    echo -e "-s, --script   Run a script to the remote target"
     echo -e "--help         Print this help"
 
     exit 0
@@ -41,14 +42,24 @@ function output() {
     fi
 }
 
-function ssh_command() {
+function return_code() {
+    local code=$1
+    if [[ ${code} != "0" ]]; then
 
-    ssh ${USER}@${1} "${COMMAND}"
-    if [[ $? != "0" ]]; then
-
-        echo -e "${RED}[Error]${NC} ssh command error"
+        echo -e "${RED}[Error]${NC} ${2} error"
         exit 1
 
+    fi
+}
+
+function ssh_command() {
+
+    if [[ -n ${SCRIPT} ]]; then
+        ssh ${USER}@${1} "bash -s" < ${SCRIPT}
+        return_code "$?" "ssh"
+    else
+        ssh ${USER}@${1} "${COMMAND}"
+        return_code "$?" "ssh"
     fi
 }
 
@@ -61,7 +72,7 @@ function main() {
 
     fi
 
-    if [[ -z ${COMMAND} ]]; then
+    if [[ -z ${COMMAND} && -z ${SCRIPT} ]]; then
 
         echo -e "${RED}[Error]${NC} Command missing"
         usage
@@ -119,6 +130,10 @@ while [ $# -gt 0 ]; do
         -o|--output)
             OUTPUT="True"
             OUTPUT_FILE="$2"
+            ;;
+        -s|--script)
+            SCRIPT="$2"
+            break
             ;;
         --help)
             usage
