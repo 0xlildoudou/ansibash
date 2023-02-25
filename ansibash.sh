@@ -25,6 +25,18 @@ function usage() {
     exit 0
 }
 
+function lines() {
+    DATE=" [$(date +"%Y-%m-%d %H:%M:%S")]"
+    HOST="HOST: $1 "
+
+    title=$(($(tput cols) - (${#DATE} + ${#HOST})))
+    line=""
+    for i in $(seq 1 $title); do
+        line="$line─"
+    done
+    echo -e "${YELLOW}${HOST}${NC}${line}${GREEN}${DATE}${NC}"
+}
+
 function output() {
 
     CURRENT_HOST="$1"
@@ -36,7 +48,7 @@ function output() {
 
     else
 
-        echo -e "${YELLOW}[HOST] : ${CURRENT_HOST}${NC} --- ${GREEN}${DATE}${NC}"
+        lines "${CURRENT_HOST}"
         ssh_command "${CURRENT_HOST}"
 
     fi
