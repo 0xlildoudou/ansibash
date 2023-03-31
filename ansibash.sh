@@ -61,7 +61,9 @@ function return_code() {
     if [[ ${code} != "0" ]]; then
 
         echo -e "${RED}[Error]${NC} ${2} error"
-        exit 1
+        if [[ -z ${INVENTORY} ]]; then
+            exit 1
+        fi
 
     fi
 }
