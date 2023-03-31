@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#set -e
+#set -x
 
 # COLOR
 RED="\033[1;31m"
@@ -40,16 +40,19 @@ function lines() {
 function output() {
 
     CURRENT_HOST="$1"
+    CURRENT_USER="$2@"
+    CURRENT_PORT="-p $3"
     if [[ ${OUTPUT} == "True" ]]; then
 
         echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> ${OUTPUT_FILE}
-        ssh_command "${CURRENT_HOST}" >> ${OUTPUT_FILE}
+        ssh_command "${CURRENT_HOST}" "${CURRENT_USER}" "${CURRENT_PORT}" >> ${OUTPUT_FILE}
         echo -e "---" >> ${OUTPUT_FILE}
 
     else
 
         lines "${CURRENT_HOST}"
-        ssh_command "${CURRENT_HOST}"
+
+        ssh_command "${CURRENT_HOST}" "${CURRENT_USER}" "${CURRENT_PORT}
 
     fi
 }
@@ -59,25 +62,40 @@ function return_code() {
     if [[ ${code} != "0" ]]; then
 
         echo -e "${RED}[Error]${NC} ${2} error"
-        exit 1
+        if [[ -z ${INVENTORY} ]]; then
+            exit 1
+        fi
 
     fi
 }
 
 function ssh_command() {
 
-    if [[ -n ${SCRIPT} ]]; then
-        ssh ${USER}@${1} "bash -s" < ${SCRIPT}
-        return_code "$?" "ssh"
+    if [[ -n ${INVENTORY} ]]; then
+        CURRENT_HOST="$1"
+        CURRENT_USER="$2"
+        CURRENT_PORT="$3"
+        if [[ -n ${SCRIPT} ]]; then
+            ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "bash -s" < ${SCRIPT}
+            return_code "$?" "ssh"
+        else
+            ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "${COMMAND}"
+            return_code "$?" "ssh"
+        fi
     else
-        ssh ${USER}@${1} "${COMMAND}"
-        return_code "$?" "ssh"
+        if [[ -n ${SCRIPT} ]]; then
+            ssh ${SINGLE_USER}@${1} "bash -s" < ${SCRIPT}
+            return_code "$?" "ssh"
+        else
+            ssh ${SINGLE_USER}@${1} "${COMMAND}"
+            return_code "$?" "ssh"
+        fi
     fi
 }
 
 function main() {
 
-    if [[ -z ${USER} ]]; then
+    if [[ -z ${SINGLE_USER} && -z ${INVENTORY} ]]; then
 
         echo -e "${RED}[Error]${NC} User missing"
         usage
@@ -109,15 +127,69 @@ function main() {
     elif [[ -z ${HOSTS} && -n ${INVENTORY} ]]; then
 
         declare -a HOSTS_LIST
+        declare -a USER_LIST
+        declare -a PORT_LIST
 
         while read line; do
-            HOSTS_LIST+=($(echo $line))
+            local current_arg='init'
+            local current_arg_position=1
+            local number_host=0
+            local number_user=0
+            local number_port=0
+            while [[ ${current_arg} != "" ]]; do
+                current_arg=$(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $1}')
+                case $current_arg in
+                    host)
+                        if [[ $number_host -le 1 ]]; then
+                            HOSTS_LIST+=($(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}'))
+                            number_host=$( expr $number_host + 1 )
+                        else
+                            echo -e "${RED}Error: too many hosts${NC}"
+                            break
+                        fi
+                    ;;
+                    user)
+                        if [[ $number_user -le 1 ]]; then
+                            USER_LIST+=($(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}'))
+                            number_user=$( expr $number_user + 1 )
+                        else
+                            echo -e "${RED}Error: too many user${NC}"
+                            break
+                        fi
+                    ;;
+                    port)
+                        if [[ $number_port -le 1 ]]; then
+                            PORT_LIST+=($(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}'))
+                            number_port=$( expr $number_port + 1 )
+                        else
+                            echo -e "${RED}Error: too many port${NC}"
+                            break
+                        fi
+                    ;;
+
+                esac
+
+            current_arg_position=$( expr $current_arg_position + 1 )
+            done
+
+            if [[ $number_host == 0 ]]; then
+                echo -e "${RED}Error: no host set${NC}"
+                break
+            fi
+
+            if [[ $number_user == 0 ]]; then
+                USER_LIST+=("$USER")
+            fi
+
+            if [[ $number_port == 0 ]]; then
+                PORT_LIST+=("22")
+            fi
         done < ${INVENTORY}
 
         for i in ${!HOSTS_LIST[@]}; do
 
             DATE="$(date)"
-            output "${HOSTS_LIST[$i]}"
+            output "${HOSTS_LIST[$i]}" "${USER_LIST[$i]}" "${PORT_LIST[$i]}"
 
         done
 
@@ -130,7 +202,7 @@ while [ $# -gt 0 ]; do
             HOSTS="$2"
             ;;
         -u|--user)
-            USER="$2"
+            SINGLE_USER="$2"
             ;;
         -c|--command)
             COMMAND="$(echo $@ | sed 's/-c//g')"
