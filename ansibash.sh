@@ -138,7 +138,7 @@ function main() {
                 case $current_arg in
                     host)
                         if [[ $number_host -le 1 ]]; then
-                            HOSTS_LIST+=$(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}')
+                            HOSTS_LIST+=($(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}'))
                             number_host=$( expr $number_host + 1 )
                         else
                             echo -e "${RED}Error: too many hosts${NC}"
@@ -147,7 +147,7 @@ function main() {
                     ;;
                     user)
                         if [[ $number_user -le 1 ]]; then
-                            USER_LIST+=$(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}')
+                            USER_LIST+=($(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}'))
                             number_user=$( expr $number_user + 1 )
                         else
                             echo -e "${RED}Error: too many user${NC}"
@@ -156,7 +156,7 @@ function main() {
                     ;;
                     port)
                         if [[ $number_port -le 1 ]]; then
-                            PORT_LIST+=$(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}')
+                            PORT_LIST+=($(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $2}'))
                             number_port=$( expr $number_port + 1 )
                         else
                             echo -e "${RED}Error: too many port${NC}"
@@ -175,11 +175,11 @@ function main() {
             fi
 
             if [[ $number_user == 0 ]]; then
-                USER_LIST+="$USER"
+                USER_LIST+=("$USER")
             fi
 
             if [[ $number_port == 0 ]]; then
-                PORT_LIST+=22
+                PORT_LIST+=("22")
             fi
         done < ${INVENTORY}
 
