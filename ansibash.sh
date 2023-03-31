@@ -51,7 +51,8 @@ function output() {
     else
 
         lines "${CURRENT_HOST}"
-        ssh_command "${CURRENT_HOST}" "${CURRENT_USER}" "${CURRENT_PORT}"
+
+        ssh_command "${CURRENT_HOST}" "${CURRENT_USER}" "${CURRENT_PORT}
 
     fi
 }
