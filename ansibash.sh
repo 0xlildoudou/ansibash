@@ -63,7 +63,7 @@ function return_code() {
 
         echo -e "${RED}[Error]${NC} ${2} error"
         if [[ -z ${INVENTORY} ]]; then
-            exit 1
+            [[ ${IGNORE_ERROR} == true ]]||exit 1
         fi
 
     fi
@@ -218,6 +218,11 @@ while [ $# -gt 0 ]; do
         -s|--script)
             SCRIPT="$2"
             break
+            ;;
+
+        # special argument
+        --ignore_error)
+            IGNORE_ERROR=true
             ;;
         --help)
             usage
