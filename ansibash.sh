@@ -76,21 +76,21 @@ function ssh_command() {
         CURRENT_USER="$2"
         CURRENT_PORT="$3"
         if [[ -n ${SCRIPT} ]]; then
-            if ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "bash -s" < ${SCRIPT} ; then
+            if ! ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "bash -s" < ${SCRIPT} ; then
                 return_code "1" "ssh"
             fi
         else
-            if ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "${COMMAND}" ; then
+            if ! ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "${COMMAND}" ; then
                 return_code "1" "ssh"
             fi
         fi
     else
         if [[ -n ${SCRIPT} ]]; then
-            if ssh ${SINGLE_USER}@${1} "bash -s" < ${SCRIPT} ; then
+            if ! ssh ${SINGLE_USER}@${1} "bash -s" < ${SCRIPT} ; then
                 return_code "1" "ssh"
             fi
         else
-            if [[ $(ssh ${SINGLE_USER}@${1} "${COMMAND}") ]]; then
+            if ! ssh ${SINGLE_USER}@${1} "${COMMAND}"; then
                 return_code "1" "ssh"
             fi
         fi
