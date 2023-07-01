@@ -42,6 +42,7 @@ function output() {
     CURRENT_HOST="$1"
     CURRENT_USER="$2@"
     CURRENT_PORT="-p $3"
+    SCP_PORT="-P $3"
     if [[ ${OUTPUT} == "True" ]]; then
 
         echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> ${OUTPUT_FILE}
@@ -79,6 +80,10 @@ function ssh_command() {
             if ! ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "bash -s" < ${SCRIPT} ; then
                 return_code "1" "ssh"
             fi
+        elif [[ ${FILE_SEND} == true ]]; then
+            if ! scp ${SCP_PORT} ${FILE_SOURCE} ${CURRENT_USER}${CURRENT_HOST}:${FILE_DESTINATION};then
+                return_code "1" "scp"
+            fi
         else
             if ! ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "${COMMAND}" ; then
                 return_code "1" "ssh"
@@ -88,6 +93,10 @@ function ssh_command() {
         if [[ -n ${SCRIPT} ]]; then
             if ! ssh ${SINGLE_USER}@${1} "bash -s" < ${SCRIPT} ; then
                 return_code "1" "ssh"
+            fi
+        elif [[ ${FILE_SEND} == true ]]; then
+            if ! scp ${SCP_PORT} ${FILE_SOURCE} ${SINGLE_USER}${1}:${FILE_DESTINATION} ; then
+                return_code "1" "scp"
             fi
         else
             if ! ssh ${SINGLE_USER}@${1} "${COMMAND}"; then
@@ -106,7 +115,7 @@ function main() {
 
     fi
 
-    if [[ -z ${COMMAND} && -z ${SCRIPT} ]]; then
+    if [[ -z ${COMMAND} && -z ${SCRIPT} && -z ${FILE_SEND} ]]; then
 
         echo -e "${RED}[Error]${NC} Command missing"
         usage
@@ -224,6 +233,13 @@ while [ $# -gt 0 ]; do
             break
             ;;
 
+        -f|--file)
+            FILE_SEND=true
+            FILE_SOURCE=$(echo $2 | awk -F ':' '{print $1}')
+            FILE_DESTINATION=$(echo $2 | awk -F ':' '{print $2}')
+            break
+            ;;
+            
         # special argument
         --ignore_error)
             IGNORE_ERROR=true
