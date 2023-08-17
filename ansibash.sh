@@ -5,7 +5,6 @@
 # COLOR
 RED="\033[1;31m"
 GREEN='\033[1;32m'
-BLUE='\033[1;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
@@ -20,7 +19,11 @@ function usage() {
     echo -e "-o, --output   Print all result to a output file"
     echo -e "-c, --command  Command to broadcast on hosts (always put at the end of the command)"
     echo -e "-s, --script   Run a script to the remote target"
+    echo -e "-f, --file     Upload file to remote host"
     echo -e "--help         Print this help"
+    echo -e "-------------------------------------------------"
+    echo -e "SPECIALS OPTIONS:"
+    echo -e "--ignore_error     Continues the script even if an error occurs"
 
     exit 0
 }
@@ -45,9 +48,9 @@ function output() {
     SCP_PORT="-P $3"
     if [[ ${OUTPUT} == "True" ]]; then
 
-        echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> ${OUTPUT_FILE}
-        ssh_command "${CURRENT_HOST}" "${CURRENT_USER}" "${CURRENT_PORT}" >> ${OUTPUT_FILE}
-        echo -e "---" >> ${OUTPUT_FILE}
+        echo -e "[HOST] : ${CURRENT_HOST} --- ${DATE}" >> "${OUTPUT_FILE}"
+        ssh_command "${CURRENT_HOST}" "${CURRENT_USER}" "${CURRENT_PORT}" >> "${OUTPUT_FILE}"
+        echo -e "---" >> "${OUTPUT_FILE}"
 
     else
 
@@ -77,29 +80,29 @@ function ssh_command() {
         CURRENT_USER="$2"
         CURRENT_PORT="$3"
         if [[ -n ${SCRIPT} ]]; then
-            if ! ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "bash -s" < ${SCRIPT} ; then
+            if ! ssh "${CURRENT_USER}""${CURRENT_HOST}" "${CURRENT_PORT}" "bash -s" < "${SCRIPT}" ; then
                 return_code "1" "ssh"
             fi
         elif [[ ${FILE_SEND} == true ]]; then
-            if ! scp ${SCP_PORT} ${FILE_SOURCE} ${CURRENT_USER}${CURRENT_HOST}:${FILE_DESTINATION};then
+            if ! scp "${SCP_PORT}" "${FILE_SOURCE}" "${CURRENT_USER}""${CURRENT_HOST}":"${FILE_DESTINATION}";then
                 return_code "1" "scp"
             fi
         else
-            if ! ssh ${CURRENT_USER}${CURRENT_HOST} ${CURRENT_PORT} "${COMMAND}" ; then
+            if ! ssh "${CURRENT_USER}""${CURRENT_HOST}" "${CURRENT_PORT}" "${COMMAND}" ; then
                 return_code "1" "ssh"
             fi
         fi
     else
         if [[ -n ${SCRIPT} ]]; then
-            if ! ssh ${SINGLE_USER}@${1} "bash -s" < ${SCRIPT} ; then
+            if ! ssh "${SINGLE_USER}"@"${1}" "bash -s" < "${SCRIPT}" ; then
                 return_code "1" "ssh"
             fi
         elif [[ ${FILE_SEND} == true ]]; then
-            if ! scp ${SCP_PORT} ${FILE_SOURCE} ${SINGLE_USER}${1}:${FILE_DESTINATION} ; then
+            if ! scp "${SCP_PORT}" "${FILE_SOURCE}" "${SINGLE_USER}""${1}":"${FILE_DESTINATION}" ; then
                 return_code "1" "scp"
             fi
         else
-            if ! ssh ${SINGLE_USER}@${1} "${COMMAND}"; then
+            if ! ssh "${SINGLE_USER}"@"${1}" "${COMMAND}"; then
                 return_code "1" "ssh"
             fi
         fi
@@ -130,7 +133,7 @@ function main() {
     elif [[ -n ${HOSTS} && -z ${INVENTORY} ]]; then
 
         HOSTS_LIST=($(echo ${HOSTS} | sed -e 's/,/ /g'))
-        for i in ${!HOSTS_LIST[@]}; do
+        for i in "${!HOSTS_LIST[@]}"; do
 
             DATE="$(date)"
             output "${HOSTS_LIST[$i]}"
@@ -143,14 +146,14 @@ function main() {
         declare -a USER_LIST
         declare -a PORT_LIST
 
-        while read line; do
+        while read -r line; do
             local current_arg='init'
             local current_arg_position=1
             local number_host=0
             local number_user=0
             local number_port=0
             while [[ ${current_arg} != "" ]]; do
-                current_arg=$(echo $line | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $1}')
+                current_arg=$(echo "${line}" | awk -F' ' "{print \$$current_arg_position}" | awk -F'=' '{print $1}')
                 case $current_arg in
                     host)
                         if [[ $number_host -le 1 ]]; then
@@ -197,9 +200,9 @@ function main() {
             if [[ $number_port == 0 ]]; then
                 PORT_LIST+=("22")
             fi
-        done < ${INVENTORY}
+        done < "${INVENTORY}"
 
-        for i in ${!HOSTS_LIST[@]}; do
+        for i in "${!HOSTS_LIST[@]}"; do
 
             DATE="$(date)"
             output "${HOSTS_LIST[$i]}" "${USER_LIST[$i]}" "${PORT_LIST[$i]}"
@@ -218,7 +221,7 @@ while [ $# -gt 0 ]; do
             SINGLE_USER="$2"
             ;;
         -c|--command)
-            COMMAND="$(echo $@ | sed 's/-c//g')"
+            COMMAND="$(echo "$@" | sed 's/-c//g')"
             break
             ;;
         -i|--inventory)
@@ -235,8 +238,8 @@ while [ $# -gt 0 ]; do
 
         -f|--file)
             FILE_SEND=true
-            FILE_SOURCE=$(echo $2 | awk -F ':' '{print $1}')
-            FILE_DESTINATION=$(echo $2 | awk -F ':' '{print $2}')
+            FILE_SOURCE=$(echo "$2" | awk -F ':' '{print $1}')
+            FILE_DESTINATION=$(echo "$2" | awk -F ':' '{print $2}')
             break
             ;;
             
